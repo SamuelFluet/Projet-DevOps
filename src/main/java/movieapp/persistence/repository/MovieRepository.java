@@ -1,10 +1,14 @@
 package movieapp.persistence.repository;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Sort;
 
+import movieapp.dto.IMovieStatistics;
+import movieapp.dto.IMovieYearCount;
 import movieapp.dto.MovieStatistics;
 import movieapp.persistence.entity.Movie;
 
@@ -23,13 +27,42 @@ public interface MovieRepository extends JpaRepository<Movie, Integer>{
 	// where movie0_.title=?
 	Stream<Movie> findByTitle(String title);
 		
+	// where year = 2000
+	Stream<Movie> findByYearOrderByTitle(int year);
+	
+	// where year >= 2000
+	Stream<Movie> findByYearGreaterThanEqual(int yearMin);
+	
+	// where year <= 2000
+	Stream<Movie> findByYearLessThanEqual(int yearMax);
+	
+	// where year between 2000 and 2009 + sort
+	Stream<Movie> findByYearBetweenOrderByYear(int yearMin, int yearMax);
+	Stream<Movie> findByYearBetween(int yearMin, int yearMax, Sort sort);
+	
+	// where title = 'The Lion King' and year = 1994 + sort
+	Stream<Movie> findByTitleAndYearOrderByYear(String title, int year);
+		
 	// global statistics with DTO object
-	@Query("select new movieapp.dto.MovieStatistics("
+	@Query("select "
 			+ "COUNT(*), MIN(m.year), MAX(m.year), "
 			+ "COALESCE(SUM(duration),0), "
 			+ "AVG(duration), MIN(duration), MAX(duration), "
-			+ "MIN(LENGTH(title)), MAX(LENGTH(title))) "
+			+ "MIN(LENGTH(title)), MAX(LENGTH(title)) "
 			+ "from Movie m")
-	MovieStatistics statisticsDto();
+	IMovieStatistics statisticsDtoI();
+
+	@Query("select m.year as year, count(*) as countMovie "
+			+ "from Movie m "
+			+ "where m.year >= :yearMin group by m.year "
+			+ "having count(*) >= :countMin order by m.year")
+	Stream<IMovieYearCount> countMovieByYear(int yearMin, int countMin);
+	
+	// by director name (filmography)
+	List<Movie> findByDirectorNameOrderByYearDesc(String name);
+
+	// by actor name (filmography)
+	List<Movie> findByActorsNameOrderByYearDesc(String name);	
+
 	
 }

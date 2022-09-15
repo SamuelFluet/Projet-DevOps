@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'BRANCH', defaultValue: 'devm4a', description: 'Name of the git branch of Java Project to build')
+        string(name: 'REPOSITORY', defaultValue: '/home/useradmin/artifacts', description: 'Repository path to store artifacts')
+    }
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "Maven 3.6.3"
+    }
+
+    stages {
+        stage('Git') {
+            steps{
+                // Get some code from a GitHub repository
+                git branch: "${params.BRANCH}",
+                    url: 'https://github.com/SamuelFluet/Projet-DevOps.git'
+            }
+        }
+        stage('Test') {
+            steps{
+                // Run Maven: clean, compile, test-compile, test
+                sh "mvn clean test -Dtest=movieapp/persistence/Test*"
+            }
+            post {
+               always {
+                   junit '**/target/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                
+                // Run Maven on a Unix agent.
+                sh "mvn -DskipTests -Dmaven.test.skip package"
+
+                // To run Maven on a Windows agent, use
+                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+            }
+
+            post {
+                // If Maven was able to run the tests, even if some of the test
+                // failed, record the test results and archive the jar file.
+                success {
+                    // archiveArtifacts 'target/*.jar'
+                    sh "cp target/movieapi.jar ${params.REPOSITORY}/"
+                }
+            }
+        }
+    }
+}

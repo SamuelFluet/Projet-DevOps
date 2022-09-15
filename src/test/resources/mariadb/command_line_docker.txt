@@ -1,0 +1,1 @@
+docker run --detach --name testmariadb -p 3306:3306 --env MARIADB_USER=movie --env MARIADB_PASSWORD=password --env MARIADB_ROOT_PASSWORD=password --env MARIADB_DATABASE=dbmovie mariadb
